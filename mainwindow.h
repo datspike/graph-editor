@@ -37,6 +37,7 @@ private slots:
     void saveGraph();
     void loadGraph();
     void saveScreenshot();
+    void calculateExpectedValue();
 
 private:
     Ui::MainWindow *ui;

@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QMap>
+#include "float.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -240,6 +242,7 @@ void MainWindow::addGraph()
     ui->customPlot->graph()->setSelectable(QCP::stSingleData);
     ui->customPlot->rescaleAxes();
     ui->customPlot->replot();
+    calculateExpectedValue();
 }
 
 void MainWindow::addRandomGraph()
@@ -284,5 +287,46 @@ void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex
         MainWindow::currentGraph.y[dataIndex] = newDataValue;
         ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
         ui->customPlot->replot();
+        calculateExpectedValue();
     }
+}
+
+void MainWindow::calculateExpectedValue()
+{
+    double result = 0;
+    double max = -DBL_MAX;
+    double min = DBL_MAX;
+    double item;
+    foreach(item, MainWindow::currentGraph.y)
+    {
+        if(item>max)
+            max = item;
+        if(item<min)
+            min = item;
+    }
+    double delta = (max - min) / 10;
+    double p[10];
+    QMap<double, int> groups;;
+    for(int i=0;i<10;i++)
+    {
+        int temp = 0;
+        foreach(item, MainWindow::currentGraph.y)
+        {
+            if(item>min+i*delta && item<=min+(i+1)*delta)
+            {
+                temp++;
+                groups.insert(item, i);
+            }
+        }
+        if(i==0)
+            temp++;
+        p[i] = temp/(double)(MainWindow::currentGraph.y.length());
+    }
+
+    foreach(item, MainWindow::currentGraph.y)
+    {
+        result += item * p[groups.value(item)];
+    }
+
+    ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
 }
