@@ -356,7 +356,7 @@ void MainWindow::calculateStudent()
     double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
     double percentErrorInterval = trustedInterval/mean*100;
 
-    QString percentResult = QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError));
+    QString meanSquaredErrorResult = QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError));
     QString finalResult = QString::number(mean).append(" ± ").append(QString::number(trustedInterval));
     QString percentResult = QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%");
     
