@@ -1,7 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMap>
+#include <QList>
 #include "float.h"
+#include <math.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -329,4 +331,33 @@ void MainWindow::calculateExpectedValue()
     }
 
     ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
+}
+
+void MainWindow::calculateStudent()
+{
+    double mean,sum,squaredErrorsSum=0,meanSquaredError;
+    int n=MainWindow::currentGraph.y.length();
+    double item;
+    foreach(item, MainWindow::currentGraph.y)
+    {
+        sum+=item;
+    }
+    mean = sum/n;
+
+    QList<double> errors;
+    foreach(item, MainWindow::currentGraph.y)
+    {
+        errors.append(mean-item);
+        squaredErrorsSum+=(mean-item)*(mean-item);
+    }
+
+    meanSquaredError = sqrt(squaredErrorsSum/(n*(n-1)));
+
+    double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
+    double percentErrorInterval = trustedInterval/mean*100;
+
+    QString percentResult = QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError));
+    QString finalResult = QString::number(mean).append(" ± ").append(QString::number(trustedInterval));
+    QString percentResult = QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%");
+    
 }
