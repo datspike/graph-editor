@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>804</width>
-    <height>659</height>
+    <height>698</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -67,35 +67,7 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_raspr">
-         <property name="text">
-          <string>Вид распределения:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_mean">
-         <property name="text">
-          <string>Среднеквадратическое отклонение: </string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_final">
-         <property name="text">
-          <string>Критерий Стьюдента: </string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_mat">
-         <property name="text">
-          <string>Математическое ожидание:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -107,14 +79,42 @@ p, li { white-space: pre-wrap; }
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_mean">
+         <property name="text">
+          <string>Среднеквадратическое отклонение: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="label_percent">
          <property name="text">
           <string>Относительная погрешность: </string>
          </property>
         </widget>
        </item>
-       <item row="0" column="1" rowspan="6">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_final">
+         <property name="text">
+          <string>Критерий Стьюдента: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="label_raspr">
+         <property name="text">
+          <string>Распределение результатов</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_mat">
+         <property name="text">
+          <string>Математическое ожидание:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" rowspan="4">
         <widget class="QCustomPlot" name="plotDistribution" native="true"/>
        </item>
       </layout>

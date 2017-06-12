@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customPlot->xAxis->setLabel("Номер измерения");
     ui->customPlot->yAxis->setLabel("Результат");
 
-    addRandomGraph(rand() % 4);
+    addRandomGraph(3);
     ui->customPlot->rescaleAxes();
 
     // connect slot that ties some axis selections together (especially opposite axes):
