@@ -276,17 +276,20 @@ void MainWindow::addRandomGraph()
 {
     int n = 100; // number of points in graph
     double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
+    //double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
     double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
     double yOffset = (rand()/(double)RAND_MAX - 0.5)*10;
-    double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
+    //double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
+    //double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
+    //double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
+    //double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
     for (int i=0; i<n; i++)
     {
         MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
-        MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
+        //MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
+        //MainWindow::currentGraph.y.append(sqrt(MainWindow::currentGraph.x[i])*yScale + yOffset);
+        //MainWindow::currentGraph.y.append(pow(MainWindow::currentGraph.x[i],2)*yScale + yOffset);
+        MainWindow::currentGraph.y.append(yOffset + (rand()/(double)RAND_MAX - 0.5)*0.05);
     }
     if (not MainWindow::currentGraph.plotted){
         this->addGraph();
@@ -389,7 +392,7 @@ void MainWindow::calculateStudent()
     meanSquaredError = sqrt(squaredErrorsSum/(n*(n-1)));
 
     double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
-    double percentErrorInterval = trustedInterval/mean*100;
+    double percentErrorInterval = fabs(trustedInterval/mean*100);
 
     ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
     ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean).append(" ± ").append(QString::number(trustedInterval)));
