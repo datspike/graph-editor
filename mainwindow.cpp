@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customPlot->xAxis->setLabel("Номер измерения");
     ui->customPlot->yAxis->setLabel("Результат");
 
-    addRandomGraph();
+    addRandomGraph(rand() % 4);
     ui->customPlot->rescaleAxes();
 
     // connect slot that ties some axis selections together (especially opposite axes):
@@ -46,10 +46,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->customPlot, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphDoubleClick(QCPAbstractPlottable*,int)));
     // connect menu actions
     connect(ui->actionDelete, SIGNAL(triggered(bool)), this, SLOT(removeAllGraphs()));
-    connect(ui->actionAddRandom, SIGNAL(triggered(bool)), this, SLOT(addRandomGraph()));
     connect(ui->actionSave, SIGNAL(triggered(bool)), this, SLOT(saveGraph()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), this, SLOT(loadGraph()));
     connect(ui->actionScreenshot, SIGNAL(triggered(bool)), this, SLOT(saveScreenshot()));
+
+    QSignalMapper* signalMapper = new QSignalMapper (this) ;
+    connect (ui->action_sin, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
+    connect (ui->action_sqrt, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
+    connect (ui->action_power, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
+    connect (ui->action_line, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
+
+    signalMapper -> setMapping (ui->action_sin, 0) ;
+    signalMapper -> setMapping (ui->action_sqrt, 1) ;
+    signalMapper -> setMapping (ui->action_power, 2) ;
+    signalMapper -> setMapping (ui->action_line, 3) ;
+
+    connect (signalMapper, SIGNAL(mapped(int)), this, SLOT(addRandomGraph(int))) ;
 }
 
 MainWindow::~MainWindow()
@@ -273,26 +285,43 @@ void MainWindow::plotDistrPlot()
     ui->plotDistribution->replot();
 }
 
-void MainWindow::addRandomGraph()
+void MainWindow::addRandomGraph(int type)
 {
     int n = 100; // number of points in graph
-    //double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    //double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    //double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
+    double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
+    double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
+    double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
     double yOffset = (rand()/(double)RAND_MAX + 0.5)*10;
-    //double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
-    //double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
-    //double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
-    //double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
+    double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
+    double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
+    double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
+    double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(yOffset, 0.5);
     for (int i=0; i<n; i++)
     {
-        MainWindow::currentGraph.x.append(i);
-        //MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
-        //MainWindow::currentGraph.y.append(sqrt(MainWindow::currentGraph.x[i])*yScale + yOffset);
-        //MainWindow::currentGraph.y.append(pow(MainWindow::currentGraph.x[i],2)*yScale + yOffset);
-        MainWindow::currentGraph.y.append(distribution(generator));
+        switch(type) {
+        // sin
+        case 0:
+            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
+            MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
+            break;
+        // sqrt
+        case 1:
+            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
+            MainWindow::currentGraph.y.append(sqrt(MainWindow::currentGraph.x[i])*yScale + yOffset);
+            break;
+        // power
+        case 2:
+            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
+            MainWindow::currentGraph.y.append(pow(MainWindow::currentGraph.x[i],2)*yScale + yOffset);
+            break;
+        // line
+        case 3:
+            MainWindow::currentGraph.x.append(i);
+            MainWindow::currentGraph.y.append(distribution(generator));
+            break;
+        }
     }
     if (not MainWindow::currentGraph.plotted){
         this->addGraph();

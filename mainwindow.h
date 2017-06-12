@@ -32,7 +32,7 @@ private slots:
     void selectionChanged();
     void mousePress();
     void mouseWheel();
-    void addRandomGraph();
+    void addRandomGraph(int type);
     void removeAllGraphs();    
     void addGraph();
     void saveGraph();

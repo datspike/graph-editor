@@ -142,7 +142,16 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>График</string>
     </property>
-    <addaction name="actionAddRandom"/>
+    <widget class="QMenu" name="menu_3">
+     <property name="title">
+      <string>Добавить случайный</string>
+     </property>
+     <addaction name="action_power"/>
+     <addaction name="action_sqrt"/>
+     <addaction name="action_sin"/>
+     <addaction name="action_line"/>
+    </widget>
+    <addaction name="menu_3"/>
     <addaction name="actionDelete"/>
     <addaction name="actionScreenshot"/>
    </widget>
@@ -170,9 +179,24 @@ p, li { white-space: pre-wrap; }
     <string>Скриншот</string>
    </property>
   </action>
-  <action name="actionAddRandom">
+  <action name="action_power">
    <property name="text">
-    <string>Добавить случайный</string>
+    <string>Парабола</string>
+   </property>
+  </action>
+  <action name="action_sqrt">
+   <property name="text">
+    <string>Корень</string>
+   </property>
+  </action>
+  <action name="action_sin">
+   <property name="text">
+    <string>Комбинация синусов</string>
+   </property>
+  </action>
+  <action name="action_line">
+   <property name="text">
+    <string>Линия с помехами</string>
    </property>
   </action>
  </widget>
