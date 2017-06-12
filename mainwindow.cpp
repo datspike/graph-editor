@@ -4,6 +4,7 @@
 #include <QList>
 #include "float.h"
 #include <math.h>
+#include <random>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -13,16 +14,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes | QCP::iSelectPlottables);
-    ui->customPlot->xAxis->setRange(-8, 8);
-    ui->customPlot->yAxis->setRange(-5, 5);
+    ui->customPlot->xAxis->setRange(0, 10);
+    ui->customPlot->yAxis->setRange(-1, 11);
     ui->customPlot->axisRect()->setupFullAxesBox();
 
     ui->customPlot->plotLayout()->insertRow(0);
     MainWindow::title = new QCPTextElement(ui->customPlot, "Случайный график", QFont("sans", 17, QFont::Bold));
     ui->customPlot->plotLayout()->addElement(0, 0, MainWindow::title);
 
-    ui->customPlot->xAxis->setLabel("Ось X");
-    ui->customPlot->yAxis->setLabel("Ось Y");
+    ui->customPlot->xAxis->setLabel("Номер измерения");
+    ui->customPlot->yAxis->setLabel("Результат");
 
     addRandomGraph();
     ui->customPlot->rescaleAxes();
@@ -275,21 +276,23 @@ void MainWindow::plotDistrPlot()
 void MainWindow::addRandomGraph()
 {
     int n = 100; // number of points in graph
-    double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
+    //double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
     //double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
-    double yOffset = (rand()/(double)RAND_MAX - 0.5)*10;
+    //double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
+    double yOffset = (rand()/(double)RAND_MAX + 0.5)*10;
     //double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
     //double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
     //double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
     //double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
+    std::default_random_engine generator;
+    std::normal_distribution<double> distribution(yOffset, 0.5);
     for (int i=0; i<n; i++)
     {
-        MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
+        MainWindow::currentGraph.x.append(i);
         //MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
         //MainWindow::currentGraph.y.append(sqrt(MainWindow::currentGraph.x[i])*yScale + yOffset);
         //MainWindow::currentGraph.y.append(pow(MainWindow::currentGraph.x[i],2)*yScale + yOffset);
-        MainWindow::currentGraph.y.append(yOffset + (rand()/(double)RAND_MAX - 0.5)*0.05);
+        MainWindow::currentGraph.y.append(distribution(generator));
     }
     if (not MainWindow::currentGraph.plotted){
         this->addGraph();
@@ -363,10 +366,29 @@ void MainWindow::calculateExpectedValue()
         MainWindow::currentGraph.xd.append(i);
     }
 
-    foreach(item, MainWindow::currentGraph.y)
+    for(int i=0;i<10;i++)
     {
-        result += item * MainWindow::currentGraph.xd[groups.value(item)];
+        int temp = 0;
+        foreach(item, MainWindow::currentGraph.y)
+        {
+            if(item>min+i*delta && item<=min+(i+1)*delta)
+            {
+                temp++;
+                groups.insert(item, i);
+            }
+        }
+        if(i==0)
+            temp++;
+        p[i] = temp/(double)(MainWindow::currentGraph.y.length());
+        MainWindow::currentGraph.yd.append(p[i]);
+        MainWindow::currentGraph.xd.append(i);
+        result += (min + i*delta + delta/2) * p[i];
     }
+
+   /* foreach(item, MainWindow::currentGraph.y)
+    {
+        result += item * MainWindow::currentGraph.yd[groups.value(item)];
+    }*/
 
     ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
 }
@@ -395,6 +417,6 @@ void MainWindow::calculateStudent()
     double percentErrorInterval = fabs(trustedInterval/mean*100);
 
     ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
-    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean).append(" ± ").append(QString::number(trustedInterval)));
+    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean, 'f', 5).append(" ± ").append(QString::number(trustedInterval, 'f', 5)));
     ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
 }
