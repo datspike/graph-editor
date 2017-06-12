@@ -153,6 +153,9 @@ void MainWindow::titleDoubleClick(QMouseEvent* event)
         {
             title->setText(newTitle);
             ui->customPlot->replot();
+            calculateExpectedValue();
+            calculateStudent();
+            plotDistrPlot();
         }
     }
 }
@@ -168,6 +171,9 @@ void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart par
         {
             axis->setLabel(newLabel);
             ui->customPlot->replot();
+            calculateExpectedValue();
+            calculateStudent();
+            plotDistrPlot();
         }
     }
 }
@@ -245,6 +251,25 @@ void MainWindow::addGraph()
     ui->customPlot->rescaleAxes();
     ui->customPlot->replot();
     calculateExpectedValue();
+    calculateStudent();
+    plotDistrPlot();
+}
+
+void MainWindow::plotDistrPlot()
+{
+    ui->plotDistribution->clearGraphs();
+    ui->plotDistribution->addGraph();
+    ui->plotDistribution->graph()->setData(MainWindow::currentGraph.xd, MainWindow::currentGraph.yd);
+    QCPScatterStyle scatter;
+    scatter.setShape(QCPScatterStyle::ssCircle);
+    scatter.setPen(QPen(Qt::blue));
+    scatter.setBrush(Qt::white);
+    scatter.setSize(5);
+    ui->plotDistribution->graph()->setPen(QPen(Qt::green));
+    ui->plotDistribution->graph()->setScatterStyle(QCPScatterStyle(scatter));
+    ui->plotDistribution->graph()->setSelectable(QCP::stSingleData);
+    ui->plotDistribution->rescaleAxes();
+    ui->plotDistribution->replot();
 }
 
 void MainWindow::addRandomGraph()
@@ -274,9 +299,14 @@ void MainWindow::removeAllGraphs()
 {
     MainWindow::currentGraph.x.clear();
     MainWindow::currentGraph.y.clear();
+    MainWindow::currentGraph.xd.clear();
+    MainWindow::currentGraph.yd.clear();
     MainWindow::currentGraph.plotted = false;
     ui->customPlot->clearGraphs();
     ui->customPlot->replot();
+    calculateExpectedValue();
+    calculateStudent();
+    plotDistrPlot();
 }
 
 void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex)
@@ -290,6 +320,7 @@ void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex
         ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
         ui->customPlot->replot();
         calculateExpectedValue();
+        calculateStudent();
     }
 }
 
@@ -308,6 +339,8 @@ void MainWindow::calculateExpectedValue()
     }
     double delta = (max - min) / 10;
     double p[10];
+    MainWindow::currentGraph.yd.clear();
+    MainWindow::currentGraph.xd.clear();
     QMap<double, int> groups;;
     for(int i=0;i<10;i++)
     {
@@ -323,11 +356,13 @@ void MainWindow::calculateExpectedValue()
         if(i==0)
             temp++;
         p[i] = temp/(double)(MainWindow::currentGraph.y.length());
+        MainWindow::currentGraph.yd.append(p[i]);
+        MainWindow::currentGraph.xd.append(i);
     }
 
     foreach(item, MainWindow::currentGraph.y)
     {
-        result += item * p[groups.value(item)];
+        result += item * MainWindow::currentGraph.xd[groups.value(item)];
     }
 
     ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
@@ -356,8 +391,7 @@ void MainWindow::calculateStudent()
     double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
     double percentErrorInterval = trustedInterval/mean*100;
 
-    QString meanSquaredErrorResult = QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError));
-    QString finalResult = QString::number(mean).append(" ± ").append(QString::number(trustedInterval));
-    QString percentResult = QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%");
-    
+    ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
+    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean).append(" ± ").append(QString::number(trustedInterval)));
+    ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
 }

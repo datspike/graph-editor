@@ -9,6 +9,7 @@ struct Graph {
     bool plotted = false;
     QString title = "Случайный график", xaxisname = "Ось X", yaxisname = "Ось Y";
     QVector<double> x, y;
+    QVector<double> xd, yd;
 };
 
 namespace Ui {
@@ -39,6 +40,7 @@ private slots:
     void saveScreenshot();
     void calculateExpectedValue();
     void calculateStudent();
+    void plotDistrPlot();
 
 private:
     Ui::MainWindow *ui;

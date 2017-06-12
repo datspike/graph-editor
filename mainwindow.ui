@@ -14,8 +14,8 @@
    <string>Редактор графиков</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
      <widget class="QFrame" name="frame_2">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
@@ -58,7 +58,7 @@
       </layout>
      </widget>
     </item>
-    <item>
+    <item row="1" column="0">
      <widget class="QFrame" name="frame">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
@@ -66,22 +66,36 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QLabel" name="label_mat">
-         <property name="text">
-          <string>Математическое ожидание:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="1" column="0">
         <widget class="QLabel" name="label_raspr">
          <property name="text">
           <string>Вид распределения:</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_mean">
+         <property name="text">
+          <string>Среднеквадратическое отклонение: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_final">
+         <property name="text">
+          <string>Критерий Стьюдента: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_mat">
+         <property name="text">
+          <string>Математическое ожидание:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -92,6 +106,16 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Ubuntu'; font-size:11pt; font-weight:600;&quot;&gt;Даблклик&lt;/span&gt;&lt;span style=&quot; font-family:'Ubuntu'; font-size:11pt;&quot;&gt; по осям, названиям или точкам графика чтобы установить значения.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_percent">
+         <property name="text">
+          <string>Относительная погрешность: </string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" rowspan="6">
+        <widget class="QCustomPlot" name="plotDistribution" native="true"/>
        </item>
       </layout>
      </widget>
