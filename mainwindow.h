@@ -38,7 +38,7 @@ private slots:
     void saveGraph();
     void loadGraph();
     void saveScreenshot();
-    void calculateExpectedValue();
+    double calculateExpectedValue(QVector<double> values);
     void calculateStudent();
     void plotDistrPlot();
 

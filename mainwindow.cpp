@@ -359,13 +359,13 @@ void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex
     }
 }
 
-void MainWindow::calculateExpectedValue()
+double MainWindow::calculateExpectedValue(QVector<double> values)
 {
     double result = 0;
     double max = -DBL_MAX;
     double min = DBL_MAX;
     double item;
-    foreach(item, MainWindow::currentGraph.y)
+    foreach(item, values)
     {
         if(item>max)
             max = item;
@@ -380,7 +380,7 @@ void MainWindow::calculateExpectedValue()
     for(int i=0;i<10;i++)
     {
         int temp = 0;
-        foreach(item, MainWindow::currentGraph.y)
+        foreach(item, values)
         {
             if(item>min+i*delta && item<=min+(i+1)*delta)
             {
@@ -390,7 +390,7 @@ void MainWindow::calculateExpectedValue()
         }
         if(i==0)
             temp++;
-        p[i] = temp/(double)(MainWindow::currentGraph.y.length());
+        p[i] = temp/(double)(values.length());
         MainWindow::currentGraph.yd.append(p[i]);
         MainWindow::currentGraph.xd.append(i);
     }
@@ -398,7 +398,7 @@ void MainWindow::calculateExpectedValue()
     for(int i=0;i<10;i++)
     {
         int temp = 0;
-        foreach(item, MainWindow::currentGraph.y)
+        foreach(item, values)
         {
             if(item>min+i*delta && item<=min+(i+1)*delta)
             {
@@ -408,9 +408,12 @@ void MainWindow::calculateExpectedValue()
         }
         if(i==0)
             temp++;
-        p[i] = temp/(double)(MainWindow::currentGraph.y.length());
-        MainWindow::currentGraph.yd.append(p[i]);
-        MainWindow::currentGraph.xd.append(i);
+        p[i] = temp/(double)(values.length());
+        if(MainWindow::currentGraph.yd.length()<10)
+        {
+            MainWindow::currentGraph.yd.append(p[i]);
+            MainWindow::currentGraph.xd.append(i);
+        }
         result += (min + i*delta + delta/2) * p[i];
     }
 
@@ -419,10 +422,11 @@ void MainWindow::calculateExpectedValue()
         result += item * MainWindow::currentGraph.yd[groups.value(item)];
     }*/
 
-    ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
+    //ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
+    return result;
 }
 
-void MainWindow::calculateStudent()
+double MainWindow::calculateStudent(QVector<double> values)
 {
     double mean,sum,squaredErrorsSum=0,meanSquaredError;
     int n=MainWindow::currentGraph.y.length();
@@ -445,7 +449,8 @@ void MainWindow::calculateStudent()
     double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
     double percentErrorInterval = fabs(trustedInterval/mean*100);
 
-    ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
-    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean, 'f', 5).append(" ± ").append(QString::number(trustedInterval, 'f', 5)));
-    ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
+    return trustedInterval;
+    //ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
+    //ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean, 'f', 5).append(" ± ").append(QString::number(trustedInterval, 'f', 5)));
+    //ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
 }
