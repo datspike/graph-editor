@@ -1,3 +1,4 @@
+// Made by BIV142 students Elesin Alexey and Alexander Tarasov. Remember, c++ is boooring
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMap>
@@ -25,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->customPlot->xAxis->setLabel("Номер измерения");
     ui->customPlot->yAxis->setLabel("Результат");
 
-    addRandomGraph(3);
+    addRandomGraph();
     ui->customPlot->rescaleAxes();
 
     // connect slot that ties some axis selections together (especially opposite axes):
@@ -43,30 +44,27 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(MainWindow::title, SIGNAL(doubleClicked(QMouseEvent*)), this, SLOT(titleDoubleClick(QMouseEvent*)));
 
     // connect slot that shows a message in the status bar when a graph is clicked:
+    connect(ui->customPlot, SIGNAL(plottableClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphDoubleClick(QCPAbstractPlottable*,int)));
     connect(ui->customPlot, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(graphDoubleClick(QCPAbstractPlottable*,int)));
+
     // connect menu actions
     connect(ui->actionDelete, SIGNAL(triggered(bool)), this, SLOT(removeAllGraphs()));
-    connect(ui->actionSave, SIGNAL(triggered(bool)), this, SLOT(saveGraph()));
+    connect(ui->actionSave_2, SIGNAL(triggered(bool)), this, SLOT(saveGraph()));
     connect(ui->actionOpen, SIGNAL(triggered(bool)), this, SLOT(loadGraph()));
     connect(ui->actionScreenshot, SIGNAL(triggered(bool)), this, SLOT(saveScreenshot()));
-
-    QSignalMapper* signalMapper = new QSignalMapper (this) ;
-    connect (ui->action_sin, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
-    connect (ui->action_sqrt, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
-    connect (ui->action_power, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
-    connect (ui->action_line, SIGNAL(triggered()), signalMapper, SLOT(map())) ;
-
-    signalMapper -> setMapping (ui->action_sin, 0) ;
-    signalMapper -> setMapping (ui->action_sqrt, 1) ;
-    signalMapper -> setMapping (ui->action_power, 2) ;
-    signalMapper -> setMapping (ui->action_line, 3) ;
-
-    connect (signalMapper, SIGNAL(mapped(int)), this, SLOT(addRandomGraph(int))) ;
+    connect(ui->actionAddRandom, SIGNAL(triggered(bool)), this, SLOT(addRandomGraph()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex)
+{
+    double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
+    double dataKey = plottable->interface1D()->dataMainKey(dataIndex);
+    ui->label_point->setText("Значение в выбранной точке: x = "+QString::number(dataKey)+" y = "+QString::number(dataValue));
 }
 
 void MainWindow::saveScreenshot()
@@ -85,26 +83,7 @@ void MainWindow::saveScreenshot()
 
 void MainWindow::saveGraph()
 {
-    QJsonObject infoObject;
-    infoObject.insert("title", QJsonValue::fromVariant(MainWindow::title->text()));
-    infoObject.insert("xaxisname", QJsonValue::fromVariant(ui->customPlot->xAxis->label()));
-    infoObject.insert("yaxisname", QJsonValue::fromVariant(ui->customPlot->yAxis->label()));
-    QJsonArray graphDataX;
-    for (int i=0; i<MainWindow::currentGraph.x.length(); i++)
-    {
-        graphDataX.push_back(MainWindow::currentGraph.x[i]);
-    }
-    infoObject.insert("data_x", graphDataX);
-    QJsonArray graphDataY;
-    for (int i=0; i<MainWindow::currentGraph.y.length(); i++)
-    {
-        graphDataY.push_back(MainWindow::currentGraph.y[i]);
-    }
-    infoObject.insert("data_y", graphDataY);
-
-    QJsonDocument json_doc(infoObject);
-
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить данные графика"), QDir::homePath(), tr("Json (*.json);;All Files (*)"));
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Сохранить данные графика"), QDir::homePath(), tr("csv (*.csv);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     else
@@ -116,13 +95,23 @@ void MainWindow::saveGraph()
             return;
         }
         QTextStream stream( &file );
-        stream << json_doc.toJson() << endl;
+        stream.setCodec("UTF-8");
+        stream.setGenerateByteOrderMark(true);
+        stream << MainWindow::currentGraph.title << ';' << MainWindow::currentGraph.xaxisname << ';' << MainWindow::currentGraph.yaxisname  << ';' << '\n';
+        foreach (QVector<double> item, MainWindow::currentGraph.graphdata)
+        {
+            foreach (double value, item)
+            {
+                stream << QString::number(value) << ";";
+            }
+            stream << '\n';
+        }
     }
 }
 
 void MainWindow::loadGraph()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Открыть данные графика"), QDir::homePath(), tr("Json (*.json);;All Files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Открыть данные графика"), QDir::homePath(), tr("CSV (*.csv);;All Files (*)"));
     if (fileName.isEmpty())
         return;
     else
@@ -133,23 +122,34 @@ void MainWindow::loadGraph()
             QMessageBox::information(this, tr("Не удалось открыть файл"), file.errorString());
             return;
         }
-        QString json_text = file.readAll();
-        file.close();
         MainWindow::removeAllGraphs();
-        QJsonDocument json_doc = QJsonDocument::fromJson(json_text.toUtf8());
-        QJsonObject infoObject = json_doc.object();
-        MainWindow::currentGraph.title = infoObject["title"].toString();
-        MainWindow::currentGraph.xaxisname = infoObject["xaxisname"].toString();
-        MainWindow::currentGraph.yaxisname = infoObject["yaxisname"].toString();
-        QJsonArray data_x = infoObject["data_x"].toArray();
-        QJsonArray data_y = infoObject["data_y"].toArray();
-        QJsonValue item;
-        foreach (item, data_x) {
-            MainWindow::currentGraph.x.append(item.toDouble());
+        QString info = file.readLine();
+        //read graph info
+        MainWindow::currentGraph.title = info.split(";")[0];
+        MainWindow::currentGraph.xaxisname = info.split(";")[1];
+        MainWindow::currentGraph.yaxisname = info.split(";")[2];
+        //read data massive
+        //while not eos read line
+        QVector<double> y_values;
+        while (!file.atEnd())
+        {
+            QString line = file.readLine();
+            QStringList line_list = line.split(';');
+            y_values.clear();
+            double x = line_list[0].toDouble();
+            for (int i = 1; i<line_list.length(); i++)
+            {
+                y_values.append(line_list[i].toDouble());
+            }
+            MainWindow::currentGraph.x.append(x);
+            double y = calculateExpectedValue(y_values);
+            double student = calculateStudent(y_values);
+            MainWindow::currentGraph.y.append(y);
+            MainWindow::currentGraph.y_min.append(y - student);
+            MainWindow::currentGraph.y_max.append(y + student);
         }
-        foreach (item, data_y) {
-            MainWindow::currentGraph.y.append(item.toDouble());
-        }
+        file.close();
+        file.close();
         MainWindow::addGraph();
     }
 }
@@ -166,9 +166,6 @@ void MainWindow::titleDoubleClick(QMouseEvent* event)
         {
             title->setText(newTitle);
             ui->customPlot->replot();
-            calculateExpectedValue();
-            calculateStudent();
-            plotDistrPlot();
         }
     }
 }
@@ -184,9 +181,6 @@ void MainWindow::axisLabelDoubleClick(QCPAxis *axis, QCPAxis::SelectablePart par
         {
             axis->setLabel(newLabel);
             ui->customPlot->replot();
-            calculateExpectedValue();
-            calculateStudent();
-            plotDistrPlot();
         }
     }
 }
@@ -245,29 +239,6 @@ void MainWindow::mouseWheel()
         ui->customPlot->axisRect()->setRangeZoom(Qt::Horizontal|Qt::Vertical);
 }
 
-void MainWindow::addGraph()
-{
-    MainWindow::currentGraph.plotted = true;
-    MainWindow::title->setText(MainWindow::currentGraph.title);
-    ui->customPlot->xAxis->setLabel(MainWindow::currentGraph.xaxisname);
-    ui->customPlot->yAxis->setLabel(MainWindow::currentGraph.yaxisname);
-    ui->customPlot->addGraph();
-    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
-    QCPScatterStyle scatter;
-    scatter.setShape(QCPScatterStyle::ssCircle);
-    scatter.setPen(QPen(Qt::blue));
-    scatter.setBrush(Qt::white);
-    scatter.setSize(5);
-    ui->customPlot->graph()->setPen(QPen(Qt::green));
-    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle(scatter));
-    ui->customPlot->graph()->setSelectable(QCP::stSingleData);
-    ui->customPlot->rescaleAxes();
-    ui->customPlot->replot();
-    calculateExpectedValue();
-    calculateStudent();
-    plotDistrPlot();
-}
-
 void MainWindow::plotDistrPlot()
 {
     ui->plotDistribution->clearGraphs();
@@ -285,45 +256,77 @@ void MainWindow::plotDistrPlot()
     ui->plotDistribution->replot();
 }
 
-void MainWindow::addRandomGraph(int type)
+void MainWindow::addGraph()
 {
-    int n = 100; // number of points in graph
-    double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
-    double xOffset = (rand()/(double)RAND_MAX - 0.5)*4;
-    double yOffset = (rand()/(double)RAND_MAX + 0.5)*10;
-    double r1 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r2 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r3 = (rand()/(double)RAND_MAX - 0.5)*2;
-    double r4 = (rand()/(double)RAND_MAX - 0.5)*2;
-    std::default_random_engine generator;
-    std::normal_distribution<double> distribution(yOffset, 0.5);
-    for (int i=0; i<n; i++)
-    {
-        switch(type) {
-        // sin
-        case 0:
-            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
-            MainWindow::currentGraph.y.append((qSin(MainWindow::currentGraph.x[i]*r1*5)*qSin(qCos(MainWindow::currentGraph.x[i]*r2)*r4*3)+r3*qCos(qSin(MainWindow::currentGraph.x[i])*r4*2))*yScale + yOffset);
-            break;
-        // sqrt
-        case 1:
-            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
-            MainWindow::currentGraph.y.append(sqrt(MainWindow::currentGraph.x[i])*yScale + yOffset);
-            break;
-        // power
-        case 2:
-            MainWindow::currentGraph.x.append((i/(double)n-0.5)*10.0*xScale + xOffset);
-            MainWindow::currentGraph.y.append(pow(MainWindow::currentGraph.x[i],2)*yScale + yOffset);
-            break;
-        // line
-        case 3:
-            MainWindow::currentGraph.x.append(i);
-            MainWindow::currentGraph.y.append(distribution(generator));
-            break;
-        }
-    }
+    MainWindow::currentGraph.plotted = true;
+    MainWindow::title->setText(MainWindow::currentGraph.title);
+    ui->customPlot->xAxis->setLabel(MainWindow::currentGraph.xaxisname);
+    ui->customPlot->yAxis->setLabel(MainWindow::currentGraph.yaxisname);
+    //main
+    ui->customPlot->addGraph();
+    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
+    QCPScatterStyle scatter;
+    scatter.setShape(QCPScatterStyle::ssCircle);
+    scatter.setPen(QPen(Qt::blue));
+    scatter.setBrush(Qt::white);
+    scatter.setSize(5);
+    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle(scatter));
+    ui->customPlot->graph()->setPen(QPen(Qt::darkMagenta));
+    ui->customPlot->graph()->setSelectable(QCP::stSingleData);
+    //min
+    scatter.setShape(QCPScatterStyle::ssCircle);
+    scatter.setPen(QPen(Qt::gray));
+    scatter.setBrush(Qt::white);
+    scatter.setSize(3);
+    ui->customPlot->addGraph();
+    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y_min);
+    ui->customPlot->graph()->setPen(QPen(Qt::gray));
+    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle(scatter));
+    ui->customPlot->graph()->setSelectable(QCP::stSingleData);
+    //max
+    ui->customPlot->addGraph();
+    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y_max);
+    ui->customPlot->graph()->setPen(QPen(Qt::gray));
+    ui->customPlot->graph()->setScatterStyle(QCPScatterStyle(scatter));
+    ui->customPlot->graph()->setSelectable(QCP::stSingleData);
+    //plot
+    ui->customPlot->rescaleAxes();
+    ui->customPlot->replot();
+    plotDistrPlot();
+}
+
+void MainWindow::addRandomGraph()
+{
     if (not MainWindow::currentGraph.plotted){
+        int n = 100; // number of points in graph
+        int r = 50; //number of "calculations"
+        double xScale = (rand()/(double)RAND_MAX + 0.5)*2;
+        double yScale = (rand()/(double)RAND_MAX + 0.5)*2;
+        double yOffset = (rand()/(double)RAND_MAX + 0.5)*2;
+        double xOffset = (rand()/(double)RAND_MAX + 0.5)*10;
+        QVector<double> y_values, graph_data_vector;
+        std::default_random_engine generator;
+        std::normal_distribution<double> distribution(yOffset, 0.5);
+        for (int i=0; i<n; i++)
+        {
+            graph_data_vector.clear();
+            y_values.clear();
+            double x = i*xScale + xOffset;
+            graph_data_vector.append(x);
+            for (int j=0; j<r; j++)
+            {
+                double value = distribution(generator)*yScale;
+                y_values.append(value);
+                graph_data_vector.append(value);
+            }
+            MainWindow::currentGraph.x.append(x);
+            double y = calculateExpectedValue(y_values);
+            double student = calculateStudent(y_values);
+            MainWindow::currentGraph.y.append(y);
+            MainWindow::currentGraph.y_min.append(y - student);
+            MainWindow::currentGraph.y_max.append(y + student);
+            MainWindow::currentGraph.graphdata.append(graph_data_vector);
+        }
         this->addGraph();
     } else {
         QMessageBox::warning(this, "Внимание","Сначала удалите график");
@@ -334,29 +337,19 @@ void MainWindow::removeAllGraphs()
 {
     MainWindow::currentGraph.x.clear();
     MainWindow::currentGraph.y.clear();
+    MainWindow::currentGraph.y_min.clear();
+    MainWindow::currentGraph.y_max.clear();
     MainWindow::currentGraph.xd.clear();
     MainWindow::currentGraph.yd.clear();
     MainWindow::currentGraph.plotted = false;
+    ui->label_mean->setText("Среднеквадратическое отклонение: ");
+    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: ");
+    ui->label_percent->setText("Относительная погрешность: ");
+    ui->label_point->setText("Значение в выбранной точке:");
     ui->customPlot->clearGraphs();
     ui->customPlot->replot();
-    calculateExpectedValue();
-    calculateStudent();
-    plotDistrPlot();
-}
-
-void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex)
-{
-    double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
-    bool ok;
-    double newDataValue = QInputDialog::getText(this, "Изменение значения", "Новое значение:", QLineEdit::Normal, QString::number(dataValue), &ok).toDouble();
-    if (ok)
-    {
-        MainWindow::currentGraph.y[dataIndex] = newDataValue;
-        ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
-        ui->customPlot->replot();
-        calculateExpectedValue();
-        calculateStudent();
-    }
+    ui->plotDistribution->clearGraphs();
+    ui->plotDistribution->replot();
 }
 
 double MainWindow::calculateExpectedValue(QVector<double> values)
@@ -429,16 +422,16 @@ double MainWindow::calculateExpectedValue(QVector<double> values)
 double MainWindow::calculateStudent(QVector<double> values)
 {
     double mean,sum,squaredErrorsSum=0,meanSquaredError;
-    int n=MainWindow::currentGraph.y.length();
+    int n=values.length();
     double item;
-    foreach(item, MainWindow::currentGraph.y)
+    foreach(item, values)
     {
         sum+=item;
     }
     mean = sum/n;
 
     QList<double> errors;
-    foreach(item, MainWindow::currentGraph.y)
+    foreach(item, values)
     {
         errors.append(mean-item);
         squaredErrorsSum+=(mean-item)*(mean-item);
@@ -449,8 +442,9 @@ double MainWindow::calculateStudent(QVector<double> values)
     double trustedInterval = meanSquaredError * 1.9840; //1.984 - Коэффициент для n=100 и надежности 0,95
     double percentErrorInterval = fabs(trustedInterval/mean*100);
 
-    return trustedInterval;
-    //ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
-    //ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean, 'f', 5).append(" ± ").append(QString::number(trustedInterval, 'f', 5)));
-    //ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
+    ui->label_mean->setText(QString("Среднеквадратическое отклонение: ").append(QString::number(meanSquaredError)));
+    ui->label_final->setText("Абсолютное значение с учетом Стьюдента: " + QString::number(mean, 'f', 5).append(" ± ").append(QString::number(trustedInterval, 'f', 5)));
+    ui->label_percent->setText(QString("Относительная погрешность: ").append(QString::number(percentErrorInterval)).append("%"));
+
+    return trustedInterval;    
 }

@@ -8,8 +8,9 @@
 struct Graph {
     bool plotted = false;
     QString title = "Случайный график", xaxisname = "Ось X", yaxisname = "Ось Y";
-    QVector<double> x, y;
+    QVector<double> x, y, y_min, y_max;
     QVector<double> xd, yd;
+    QVector<QVector<double>> graphdata;
 };
 
 namespace Ui {
@@ -32,14 +33,14 @@ private slots:
     void selectionChanged();
     void mousePress();
     void mouseWheel();
-    void addRandomGraph(int type);
+    void addRandomGraph();
     void removeAllGraphs();    
     void addGraph();
     void saveGraph();
     void loadGraph();
     void saveScreenshot();
     double calculateExpectedValue(QVector<double> values);
-    void calculateStudent();
+    double calculateStudent(QVector<double> values);
     void plotDistrPlot();
 
 private:
