@@ -8,7 +8,7 @@
 struct Graph {
     bool plotted = false;
     QString title = "Случайный график", xaxisname = "Ось X", yaxisname = "Ось Y";
-    QVector<double> x, y, y_min, y_max;
+    QVector<double> x, y_mean, y_min, y_max, student;
     QVector<double> xd, yd;
     QVector<QVector<double>> graphdata;
 };

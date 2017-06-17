@@ -65,6 +65,7 @@ void MainWindow::graphDoubleClick(QCPAbstractPlottable *plottable, int dataIndex
     double dataValue = plottable->interface1D()->dataMainValue(dataIndex);
     double dataKey = plottable->interface1D()->dataMainKey(dataIndex);
     ui->label_point->setText("Значение в выбранной точке: x = "+QString::number(dataKey)+" y = "+QString::number(dataValue));
+    MainWindow::calculateStudent(MainWindow::currentGraph.graphdata[dataIndex]);
 }
 
 void MainWindow::saveScreenshot()
@@ -97,14 +98,23 @@ void MainWindow::saveGraph()
         QTextStream stream( &file );
         stream.setCodec("UTF-8");
         stream.setGenerateByteOrderMark(true);
-        stream << MainWindow::currentGraph.title << ';' << MainWindow::currentGraph.xaxisname << ';' << MainWindow::currentGraph.yaxisname  << ';' << '\n';
-        foreach (QVector<double> item, MainWindow::currentGraph.graphdata)
+        stream << MainWindow::currentGraph.title << ';' << MainWindow::currentGraph.xaxisname << ';' << MainWindow::currentGraph.yaxisname  << ";\n";
+        //save numbers of data sets
+        for (int i = 0; i<MainWindow::currentGraph.graphdata[0].length(); i++)
         {
-            foreach (double value, item)
+            stream << (QString::number(i)).replace(".", ",") << ';';
+        }
+        //add mean and student columns
+        stream << "mean;student\n";
+        for (int i = 0; i<MainWindow::currentGraph.graphdata.length(); i++)
+        {
+            //write data
+            foreach (double value, MainWindow::currentGraph.graphdata[i])
             {
-                stream << QString::number(value) << ";";
+                stream << (QString::number(value)).replace(".", ",") << ";";
             }
-            stream << '\n';
+            //write mean and student
+            stream << (QString::number(MainWindow::currentGraph.y_mean[i])).replace(".", ",") << ';' << (QString::number(MainWindow::currentGraph.student[i])).replace(".", ",") << ";\n";
         }
     }
 }
@@ -123,11 +133,20 @@ void MainWindow::loadGraph()
             return;
         }
         MainWindow::removeAllGraphs();
-        QString info = file.readLine();
+        QString title_info = file.readLine();
         //read graph info
-        MainWindow::currentGraph.title = info.split(";")[0];
-        MainWindow::currentGraph.xaxisname = info.split(";")[1];
-        MainWindow::currentGraph.yaxisname = info.split(";")[2];
+        MainWindow::currentGraph.title = title_info.split(";")[0];
+        MainWindow::currentGraph.xaxisname = title_info.split(";")[1];
+        MainWindow::currentGraph.yaxisname = title_info.split(";")[2];
+        //data info
+        QString data_info = file.readLine();
+        int analytics_offset = 0;
+        bool ok;
+        data_info.split(";").last().toFloat(&ok);
+        if (!ok)
+        {
+            analytics_offset = 4; //+1 because of "\n"
+        }
         //read data massive
         //while not eos read line
         QVector<double> y_values;
@@ -136,19 +155,19 @@ void MainWindow::loadGraph()
             QString line = file.readLine();
             QStringList line_list = line.split(';');
             y_values.clear();
-            double x = line_list[0].toDouble();
-            for (int i = 1; i<line_list.length(); i++)
+            double x = line_list[0].replace(",", ".").toDouble();
+            for (int i = 1; i<(line_list.length()-analytics_offset); i++)
             {
-                y_values.append(line_list[i].toDouble());
+                y_values.append(line_list[i].replace(",", ".").toDouble());
             }
             MainWindow::currentGraph.x.append(x);
             double y = calculateExpectedValue(y_values);
             double student = calculateStudent(y_values);
-            MainWindow::currentGraph.y.append(y);
+            MainWindow::currentGraph.student.append(student);
+            MainWindow::currentGraph.y_mean.append(y);
             MainWindow::currentGraph.y_min.append(y - student);
             MainWindow::currentGraph.y_max.append(y + student);
         }
-        file.close();
         file.close();
         MainWindow::addGraph();
     }
@@ -264,7 +283,7 @@ void MainWindow::addGraph()
     ui->customPlot->yAxis->setLabel(MainWindow::currentGraph.yaxisname);
     //main
     ui->customPlot->addGraph();
-    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y);
+    ui->customPlot->graph()->setData(MainWindow::currentGraph.x, MainWindow::currentGraph.y_mean);
     QCPScatterStyle scatter;
     scatter.setShape(QCPScatterStyle::ssCircle);
     scatter.setPen(QPen(Qt::blue));
@@ -322,7 +341,8 @@ void MainWindow::addRandomGraph()
             MainWindow::currentGraph.x.append(x);
             double y = calculateExpectedValue(y_values);
             double student = calculateStudent(y_values);
-            MainWindow::currentGraph.y.append(y);
+            MainWindow::currentGraph.student.append(student);
+            MainWindow::currentGraph.y_mean.append(y);
             MainWindow::currentGraph.y_min.append(y - student);
             MainWindow::currentGraph.y_max.append(y + student);
             MainWindow::currentGraph.graphdata.append(graph_data_vector);
@@ -336,7 +356,8 @@ void MainWindow::addRandomGraph()
 void MainWindow::removeAllGraphs()
 {
     MainWindow::currentGraph.x.clear();
-    MainWindow::currentGraph.y.clear();
+    MainWindow::currentGraph.y_mean.clear();
+    MainWindow::currentGraph.student.clear();
     MainWindow::currentGraph.y_min.clear();
     MainWindow::currentGraph.y_max.clear();
     MainWindow::currentGraph.xd.clear();
@@ -409,13 +430,6 @@ double MainWindow::calculateExpectedValue(QVector<double> values)
         }
         result += (min + i*delta + delta/2) * p[i];
     }
-
-   /* foreach(item, MainWindow::currentGraph.y)
-    {
-        result += item * MainWindow::currentGraph.yd[groups.value(item)];
-    }*/
-
-    //ui->label_mat->setText(QString("Мат. ожидание: ").append(QString::number(result)));
     return result;
 }
 
